@@ -3,24 +3,47 @@ name: Deploy to Linode
 on:
   push:
     branches:
-      - main  # or your default branch
+      - main  # Replace with your default branch if needed
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
 
     steps:
+      # Step 1: Checkout your repository
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      # Step 2: Set up SSH agent
       - name: Set up SSH agent
         uses: webfactory/ssh-agent@v0.9.1
         with:
           ssh-private-key: ${{ secrets.LINODE_SSH_KEY }}
 
-      - name: Deploy files to Linode
+      # Step 3: Add Linode server to known_hosts to avoid prompts
+      - name: Add server to known_hosts
         run: |
           mkdir -p ~/.ssh
-          # optional: add Linode server to known_hosts to avoid host key prompts
           ssh-keyscan -H 72.14.176.10 >> ~/.ssh/known_hosts
+
+      # Step 4: Create target directory and fix permissions
+      - name: Prepare remote directory
+        run: |
+          ssh root@72.14.176.10 "sudo mkdir -p /var/www/africamapping && sudo chmod 755 /var/www/africamapping"
+
+      # Step 5: Sync repository files to Linode
+      - name: Deploy files to Linode
+        run: |
           rsync -avz --delete ./ root@72.14.176.10:/var/www/africamapping/
+
+      # Step 6: Install Nginx (if not installed) and restart service
+      - name: Install Nginx and serve site
+        run: |
+          ssh root@72.14.176.10 << 'EOF'
+            if ! command -v nginx > /dev/null; then
+              sudo apt update
+              sudo apt install -y nginx
+            fi
+            sudo systemctl enable nginx
+            sudo systemctl restart nginx
+          EOF
