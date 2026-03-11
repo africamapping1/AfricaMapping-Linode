@@ -8,16 +8,19 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
-      - name: Set up SSH
-        uses: webfactory/ssh-agent@v0.8.1
+      - name: Set up SSH agent
+        uses: webfactory/ssh-agent@v0.9.1
         with:
           ssh-private-key: ${{ secrets.LINODE_SSH_KEY }}
 
-      - name: Copy files to Linode
+      - name: Deploy files to Linode
         run: |
-          ssh root@72.14.176.10 "mkdir -p /var/www/africamapping"
+          mkdir -p ~/.ssh
+          # optional: add Linode server to known_hosts to avoid host key prompts
+          ssh-keyscan -H 72.14.176.10 >> ~/.ssh/known_hosts
           rsync -avz --delete ./ root@72.14.176.10:/var/www/africamapping/
