@@ -1,0 +1,1 @@
+AfricaMapping architecture notes
