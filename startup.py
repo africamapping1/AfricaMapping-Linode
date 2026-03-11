@@ -1,0 +1,1 @@
+print("AfricaMapping startup")
