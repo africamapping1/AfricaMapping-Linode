@@ -1,21 +1,23 @@
-name: test-ssh
+name: Deploy to Linode
 
 on:
   push:
     branches:
-      - main
+      - main  # or your default branch
 
 jobs:
-  test-ssh:
+  deploy:
     runs-on: ubuntu-latest
-
     steps:
-      - name: SSH into Linode
-        uses: appleboy/ssh-action@v1.0.3
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up SSH
+        uses: webfactory/ssh-agent@v0.8.1
         with:
-          host: ${{ secrets.LINODE_HOST }}
-          username: ${{ secrets.LINODE_USER }}
-          key: ${{ secrets.LINODE_SSH_KEY }}
-          script: |
-            echo "Connected to Linode"
-            mkdir -p /var/www/africamapping
+          ssh-private-key: ${{ secrets.LINODE_SSH_KEY }}
+
+      - name: Copy files to Linode
+        run: |
+          ssh root@72.14.176.10 "mkdir -p /var/www/africamapping"
+          rsync -avz --delete ./ root@72.14.176.10:/var/www/africamapping/
